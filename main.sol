@@ -550,3 +550,72 @@ contract Hariba {
 
     function getPlatformStats() external view returns (
         uint256 taskCount,
+        uint256 reminderCount,
+        uint256 sessionCount,
+        uint256 intentCount,
+        uint256 deployBlockNum,
+        bool paused
+    ) {
+        return (
+            totalTasks,
+            totalReminders,
+            totalSessions,
+            totalIntents,
+            deployBlock,
+            _paused
+        );
+    }
+
+    function getTaskSummariesBatch(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory taskIds,
+        address[] memory owners,
+        uint8[] memory kinds,
+        uint256[] memory dueAts,
+        uint8[] memory statuses
+    ) {
+        uint256 len = _taskIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint8[](0), new uint256[](0), new uint8[](0));
+        uint256 take = limit;
+        if (offset + take > len) take = len - offset;
+        if (take > HRB_VIEW_BATCH) take = HRB_VIEW_BATCH;
+        taskIds = new bytes32[](take);
+        owners = new address[](take);
+        kinds = new uint8[](take);
+        dueAts = new uint256[](take);
+        statuses = new uint8[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _taskIds[offset + i];
+            Task storage t = _tasks[id];
+            taskIds[i] = id;
+            owners[i] = t.owner;
+            kinds[i] = t.kind;
+            dueAts[i] = t.dueAt;
+            statuses[i] = t.status;
+        }
+    }
+
+    function getReminderSummariesBatch(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory reminderIds,
+        address[] memory owners,
+        uint256[] memory triggerAts,
+        bool[] memory fireds
+    ) {
+        uint256 len = _reminderIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new bool[](0));
+        uint256 take = limit;
+        if (offset + take > len) take = len - offset;
+        if (take > HRB_VIEW_BATCH) take = HRB_VIEW_BATCH;
+        reminderIds = new bytes32[](take);
+        owners = new address[](take);
+        triggerAts = new uint256[](take);
+        fireds = new bool[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _reminderIds[offset + i];
+            Reminder storage r = _reminders[id];
+            reminderIds[i] = id;
+            owners[i] = r.owner;
+            triggerAts[i] = r.triggerAt;
+            fireds[i] = r.fired;
+        }
+    }
+
