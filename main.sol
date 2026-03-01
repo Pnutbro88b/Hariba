@@ -688,3 +688,72 @@ contract Hariba {
         if (index >= _taskIds.length) revert HRB_IndexOutOfRange();
         bytes32 id = _taskIds[index];
         Task storage t = _tasks[id];
+        return (t.taskId, t.owner, t.kind, t.dueAt, t.status, t.createdAt);
+    }
+
+    function getReminderViewByIndex(uint256 index) external view returns (
+        bytes32 reminderId,
+        address owner,
+        uint256 triggerAt,
+        bytes32 linkedTaskId,
+        bool fired,
+        uint256 createdAt
+    ) {
+        if (index >= _reminderIds.length) revert HRB_IndexOutOfRange();
+        bytes32 id = _reminderIds[index];
+        Reminder storage r = _reminders[id];
+        return (r.reminderId, r.owner, r.triggerAt, r.linkedTaskId, r.fired, r.createdAt);
+    }
+
+    function getSessionViewByIndex(uint256 index) external view returns (
+        bytes32 sessionId,
+        address owner,
+        uint256 startedAt,
+        uint256 closedAt,
+        uint256 responseCount
+    ) {
+        if (index >= _sessionIds.length) revert HRB_IndexOutOfRange();
+        bytes32 id = _sessionIds[index];
+        Session storage s = _sessions[id];
+        return (s.sessionId, s.owner, s.startedAt, s.closedAt, s.responseCount);
+    }
+
+    function getIntentViewByIndex(uint256 index) external view returns (
+        bytes32 intentId,
+        address owner,
+        uint8 intentType,
+        uint256 createdAt
+    ) {
+        if (index >= _intentIds.length) revert HRB_IndexOutOfRange();
+        bytes32 id = _intentIds[index];
+        Intent storage i = _intents[id];
+        return (i.intentId, i.owner, i.intentType, i.createdAt);
+    }
+
+    function getTaskSummariesBatchSmall(uint256 offset) external view returns (
+        bytes32[] memory taskIds,
+        address[] memory owners,
+        uint8[] memory statuses
+    ) {
+        uint256 len = _taskIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint8[](0));
+        uint256 take = 8;
+        if (offset + take > len) take = len - offset;
+        taskIds = new bytes32[](take);
+        owners = new address[](take);
+        statuses = new uint8[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _taskIds[offset + i];
+            Task storage t = _tasks[id];
+            taskIds[i] = id;
+            owners[i] = t.owner;
+            statuses[i] = t.status;
+        }
+    }
+
+    function getReminderSummariesBatchSmall(uint256 offset) external view returns (
+        bytes32[] memory reminderIds,
+        address[] memory owners,
+        bool[] memory fireds
+    ) {
+        uint256 len = _reminderIds.length;
