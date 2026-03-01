@@ -136,3 +136,72 @@ contract Hariba {
     mapping(bytes32 => Session) private _sessions;
     mapping(bytes32 => Intent) private _intents;
     mapping(address => uint256) private _taskCountByOwner;
+    mapping(address => uint256) private _reminderCountByOwner;
+    mapping(address => uint256) private _sessionCountByOwner;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(bytes32 => bytes)) private _preferences;
+    mapping(bytes32 => mapping(uint256 => bytes32)) private _responseHashes;
+    mapping(bytes32 => mapping(bytes32 => bytes)) private _slotData;
+    mapping(bytes32 => uint256) private _scheduleAnchors;
+    bytes32[] private _taskIds;
+    bytes32[] private _reminderIds;
+    bytes32[] private _sessionIds;
+    bytes32[] private _intentIds;
+    uint256 public totalTasks;
+    uint256 public totalReminders;
+    uint256 public totalSessions;
+    uint256 public totalIntents;
+    uint256 public maxTasksPerUser;
+    uint256 public maxRemindersPerUser;
+    uint256 public feeWei;
+    bool private _paused;
+    uint256 private _reentrancyLock;
+
+    uint8 public constant TASK_STATUS_PENDING = 0;
+    uint8 public constant TASK_STATUS_COMPLETED = 1;
+    uint8 public constant TASK_STATUS_CANCELLED = 2;
+    uint8 public constant TASK_KIND_GENERIC = 0;
+    uint8 public constant TASK_KIND_CALL = 1;
+    uint8 public constant TASK_KIND_MEETING = 2;
+    uint8 public constant TASK_KIND_DEADLINE = 3;
+
+    modifier onlySteward() {
+        if (msg.sender != steward) revert HRB_NotSteward();
+        _;
+    }
+
+    modifier onlyVault() {
+        if (msg.sender != vault) revert HRB_NotVault();
+        _;
+    }
+
+    modifier onlyOracle() {
+        if (msg.sender != oracle) revert HRB_NotOracle();
+        _;
+    }
+
+    modifier onlyRelay() {
+        if (msg.sender != relay) revert HRB_NotRelay();
+        _;
+    }
+
+    modifier onlyKeeper() {
+        if (msg.sender != keeper) revert HRB_NotKeeper();
+        _;
+    }
+
+    modifier onlyCurator() {
+        if (msg.sender != curator) revert HRB_NotCurator();
+        _;
+    }
+
+    modifier onlySentinel() {
+        if (msg.sender != sentinel) revert HRB_NotSentinel();
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if (_paused) revert HRB_Paused();
+        _;
+    }
+
