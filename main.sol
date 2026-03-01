@@ -481,3 +481,72 @@ contract Hariba {
 
     function getIntent(bytes32 intentId) external view returns (
         address owner,
+        uint8 intentType,
+        uint256 createdAt
+    ) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) revert HRB_InvalidRefId();
+        return (i.owner, i.intentType, i.createdAt);
+    }
+
+    function getPreference(address owner, bytes32 keyHash) external view returns (bytes memory) {
+        return _preferences[owner][keyHash];
+    }
+
+    function getResponseHash(bytes32 sessionId, uint256 index) external view returns (bytes32) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (index >= s.responseCount) revert HRB_ResponseIndexOutOfBounds();
+        return _responseHashes[sessionId][index];
+    }
+
+    function getSlot(bytes32 sessionId, bytes32 slotKey) external view returns (bytes memory) {
+        return _slotData[sessionId][slotKey];
+    }
+
+    function getScheduleAnchor(bytes32 scheduleId) external view returns (uint256) {
+        return _scheduleAnchors[scheduleId];
+    }
+
+    function getTaskIdsLength() external view returns (uint256) {
+        return _taskIds.length;
+    }
+
+    function getTaskIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _taskIds.length) revert HRB_IndexOutOfRange();
+        return _taskIds[index];
+    }
+
+    function getReminderIdsLength() external view returns (uint256) {
+        return _reminderIds.length;
+    }
+
+    function getReminderIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _reminderIds.length) revert HRB_IndexOutOfRange();
+        return _reminderIds[index];
+    }
+
+    function getSessionIdsLength() external view returns (uint256) {
+        return _sessionIds.length;
+    }
+
+    function getSessionIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _sessionIds.length) revert HRB_IndexOutOfRange();
+        return _sessionIds[index];
+    }
+
+    function getIntentIdsLength() external view returns (uint256) {
+        return _intentIds.length;
+    }
+
+    function getIntentIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _intentIds.length) revert HRB_IndexOutOfRange();
+        return _intentIds[index];
+    }
+
+    function isPaused() external view returns (bool) {
+        return _paused;
+    }
+
+    function getPlatformStats() external view returns (
+        uint256 taskCount,
