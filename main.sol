@@ -67,3 +67,72 @@ contract Hariba {
     error HRB_InvalidScheduleAnchor();
     error HRB_Unauthorized();
     error HRB_DeadlinePassed();
+    error HRB_EmptyPayload();
+    error HRB_ConfigValueTooHigh();
+    error HRB_ResponseIndexOutOfBounds();
+
+    // -------------------------------------------------------------------------
+    // CONSTANTS
+    // -------------------------------------------------------------------------
+
+    uint256 public constant HRB_MAX_TASKS_GLOBAL = 4096;
+    uint256 public constant HRB_MAX_REMINDERS_GLOBAL = 2048;
+    uint256 public constant HRB_MAX_SESSIONS_PER_OWNER = 256;
+    uint256 public constant HRB_MAX_RESPONSES_PER_SESSION = 128;
+    uint256 public constant HRB_MAX_PREFERENCE_KEYS = 64;
+    uint256 public constant HRB_VIEW_BATCH = 32;
+    uint256 public constant HRB_RATING_MIN = 1;
+    uint256 public constant HRB_RATING_MAX = 5;
+    uint256 public constant HRB_INTENT_TYPES = 8;
+    uint256 public constant HRB_TASK_KINDS = 4;
+    bytes32 public constant HRB_DOMAIN_LABEL = 0xa3f71c9e2d5b8046e0c4a8f1d6b9e3c7a0d5f2b8e1c4a7d0f3b6e9c2a5d8f1b4e;
+    uint256 public constant HRB_MIN_FEE_WEI = 0;
+    uint256 public constant HRB_MAX_FEE_WEI = 0.01 ether;
+
+    struct Task {
+        bytes32 taskId;
+        address owner;
+        uint8 kind;
+        uint256 dueAt;
+        uint8 status;
+        uint256 createdAt;
+    }
+
+    struct Reminder {
+        bytes32 reminderId;
+        address owner;
+        uint256 triggerAt;
+        bytes32 linkedTaskId;
+        bool fired;
+        uint256 createdAt;
+    }
+
+    struct Session {
+        bytes32 sessionId;
+        address owner;
+        uint256 startedAt;
+        uint256 closedAt;
+        uint256 responseCount;
+    }
+
+    struct Intent {
+        bytes32 intentId;
+        address owner;
+        uint8 intentType;
+        uint256 createdAt;
+    }
+
+    address public immutable steward;
+    address public immutable vault;
+    address public immutable oracle;
+    address public immutable relay;
+    address public immutable keeper;
+    address public immutable curator;
+    address public immutable sentinel;
+    uint256 public immutable deployBlock;
+
+    mapping(bytes32 => Task) private _tasks;
+    mapping(bytes32 => Reminder) private _reminders;
+    mapping(bytes32 => Session) private _sessions;
+    mapping(bytes32 => Intent) private _intents;
+    mapping(address => uint256) private _taskCountByOwner;
