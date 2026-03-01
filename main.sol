@@ -205,3 +205,72 @@ contract Hariba {
         _;
     }
 
+    modifier nonReentrant() {
+        if (_reentrancyLock != 0) revert HRB_Reentrant();
+        _reentrancyLock = 1;
+        _;
+        _reentrancyLock = 0;
+    }
+
+    constructor() {
+        steward = address(0x7f3a91c6e2d4058b1e4f7a0c3d6e9b2f5a8c1d4e7);
+        vault = address(0x2c8e1b5f9a3d7064c0e2b5f8a1d4e7c0b3f6a9d2);
+        oracle = address(0x9d4f2a8e1c6b3057d0f3a9e2c5b8d1f4a7e0c3b6);
+        relay = address(0xe1b6c9f3a7d2058e0c4b7f2a5d8e1c4f7b0a3d6e9);
+        keeper = address(0x5a8d2f6b0e4c7193a6d0f4b8e2c5a9d3f7b1e6c0);
+        curator = address(0xb3e7c1f4a8d2069e2c5b0f3a6d9e2c5f8b1a4d7e0);
+        sentinel = address(0x4d9f3b7e1a5c8062f0d4e8b1a5c9e3f7d0b4e8a2c6);
+        deployBlock = block.number;
+        if (steward == address(0) || vault == address(0) || oracle == address(0)) revert HRB_ZeroAddress();
+        if (relay == address(0) || keeper == address(0) || curator == address(0) || sentinel == address(0)) revert HRB_ZeroAddress();
+        maxTasksPerUser = 64;
+        maxRemindersPerUser = 32;
+        feeWei = 0.001 ether;
+    }
+
+    function pause() external onlySteward {
+        _paused = true;
+        emit Paused(msg.sender, block.number);
+    }
+
+    function unpause() external onlySteward {
+        _paused = false;
+        emit Unpaused(msg.sender, block.number);
+    }
+
+    function setStewardConfig(
+        uint256 _maxTasksPerUser,
+        uint256 _maxRemindersPerUser,
+        uint256 _feeWei
+    ) external onlySteward {
+        if (_maxTasksPerUser > HRB_MAX_TASKS_GLOBAL) revert HRB_ConfigValueTooHigh();
+        if (_maxRemindersPerUser > HRB_MAX_REMINDERS_GLOBAL) revert HRB_ConfigValueTooHigh();
+        if (_feeWei > HRB_MAX_FEE_WEI) revert HRB_ConfigValueTooHigh();
+        maxTasksPerUser = _maxTasksPerUser;
+        maxRemindersPerUser = _maxRemindersPerUser;
+        feeWei = _feeWei;
+        emit StewardConfigUpdated(_maxTasksPerUser, _maxRemindersPerUser, _feeWei, block.number);
+    }
+
+    function _nextTaskId() internal view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.number, block.timestamp, totalTasks, msg.sender, "task"));
+    }
+
+    function enqueueTask(uint8 kind, uint256 dueAt) external payable whenNotPaused nonReentrant returns (bytes32 taskId) {
+        if (kind > TASK_KIND_DEADLINE) revert HRB_IndexOutOfRange();
+        if (totalTasks >= HRB_MAX_TASKS_GLOBAL) revert HRB_ExceedsMaxTasksPerUser();
+        if (_taskCountByOwner[msg.sender] >= maxTasksPerUser) revert HRB_ExceedsMaxTasksPerUser();
+        if (msg.value < feeWei) revert HRB_InsufficientDeposit();
+        taskId = _nextTaskId();
+        _tasks[taskId] = Task({
+            taskId: taskId,
+            owner: msg.sender,
+            kind: kind,
+            dueAt: dueAt,
+            status: TASK_STATUS_PENDING,
+            createdAt: block.timestamp
+        });
+        _taskIds.push(taskId);
+        _taskCountByOwner[msg.sender]++;
+        totalTasks++;
+        balanceOf[vault] += msg.value;
