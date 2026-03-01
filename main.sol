@@ -1102,3 +1102,72 @@ contract Hariba {
         if (fromIndex + count > len) count = len - fromIndex;
         intentIds = new bytes32[](count);
         owners = new address[](count);
+        intentTypes = new uint8[](count);
+        createdAts = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            bytes32 id = _intentIds[fromIndex + i];
+            Intent storage in_ = _intents[id];
+            intentIds[i] = id;
+            owners[i] = in_.owner;
+            intentTypes[i] = in_.intentType;
+            createdAts[i] = in_.createdAt;
+        }
+    }
+
+    function getResponseHashesBatch(bytes32 sessionId, uint256 fromIndex, uint256 count) external view returns (bytes32[] memory hashes) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (fromIndex >= s.responseCount) return new bytes32[](0);
+        if (count > HRB_VIEW_BATCH) count = HRB_VIEW_BATCH;
+        if (fromIndex + count > s.responseCount) count = s.responseCount - fromIndex;
+        hashes = new bytes32[](count);
+        for (uint256 i = 0; i < count; i++) hashes[i] = _responseHashes[sessionId][fromIndex + i];
+    }
+
+    uint256 public constant HRB_BATCH_MEDIUM = 16;
+    uint256 public constant HRB_BATCH_LARGE = 24;
+    uint256 public constant HRB_DEFAULT_DUE_OFFSET = 86400;
+    uint256 public constant HRB_MIN_TRIGGER_OFFSET = 60;
+
+    function getTaskSummariesBatchMedium(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory taskIds,
+        address[] memory owners,
+        uint8[] memory kinds,
+        uint8[] memory statuses
+    ) {
+        uint256 len = _taskIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint8[](0), new uint8[](0));
+        uint256 take = limit > HRB_BATCH_MEDIUM ? HRB_BATCH_MEDIUM : limit;
+        if (offset + take > len) take = len - offset;
+        taskIds = new bytes32[](take);
+        owners = new address[](take);
+        kinds = new uint8[](take);
+        statuses = new uint8[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _taskIds[offset + i];
+            Task storage t = _tasks[id];
+            taskIds[i] = id;
+            owners[i] = t.owner;
+            kinds[i] = t.kind;
+            statuses[i] = t.status;
+        }
+    }
+
+    function getReminderSummariesBatchMedium(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory reminderIds,
+        address[] memory owners,
+        uint256[] memory triggerAts,
+        bool[] memory fireds
+    ) {
+        uint256 len = _reminderIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new bool[](0));
+        uint256 take = limit > HRB_BATCH_MEDIUM ? HRB_BATCH_MEDIUM : limit;
+        if (offset + take > len) take = len - offset;
+        reminderIds = new bytes32[](take);
+        owners = new address[](take);
+        triggerAts = new uint256[](take);
+        fireds = new bool[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _reminderIds[offset + i];
+            Reminder storage r = _reminders[id];
+            reminderIds[i] = id;
