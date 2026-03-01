@@ -1378,3 +1378,72 @@ contract Hariba {
         if (t.owner == address(0)) return false;
         return t.status == TASK_STATUS_PENDING;
     }
+
+    function isTaskCompleted(bytes32 taskId) external view returns (bool) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) return false;
+        return t.status == TASK_STATUS_COMPLETED;
+    }
+
+    function isTaskCancelled(bytes32 taskId) external view returns (bool) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) return false;
+        return t.status == TASK_STATUS_CANCELLED;
+    }
+
+    function isSessionOpen(bytes32 sessionId) external view returns (bool) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) return false;
+        return s.closedAt == 0;
+    }
+
+    function totalTaskCount() external view returns (uint256) {
+        return totalTasks;
+    }
+
+    function totalReminderCount() external view returns (uint256) {
+        return totalReminders;
+    }
+
+    function totalSessionCount() external view returns (uint256) {
+        return totalSessions;
+    }
+
+    function totalIntentCount() external view returns (uint256) {
+        return totalIntents;
+    }
+
+    function taskIdsLength() external view returns (uint256) {
+        return _taskIds.length;
+    }
+
+    function reminderIdsLength() external view returns (uint256) {
+        return _reminderIds.length;
+    }
+
+    function sessionIdsLength() external view returns (uint256) {
+        return _sessionIds.length;
+    }
+
+    function intentIdsLength() external view returns (uint256) {
+        return _intentIds.length;
+    }
+
+    function getConstants() external pure returns (
+        uint256 maxTasksGlobal,
+        uint256 maxRemindersGlobal,
+        uint256 maxSessionsPerOwner,
+        uint256 maxResponsesPerSession,
+        uint256 viewBatch,
+        uint256 ratingMin,
+        uint256 ratingMax,
+        uint256 intentTypes,
+        uint256 taskKinds
+    ) {
+        return (
+            HRB_MAX_TASKS_GLOBAL,
+            HRB_MAX_REMINDERS_GLOBAL,
+            HRB_MAX_SESSIONS_PER_OWNER,
+            HRB_MAX_RESPONSES_PER_SESSION,
+            HRB_VIEW_BATCH,
+            HRB_RATING_MIN,
