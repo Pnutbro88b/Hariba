@@ -1240,3 +1240,72 @@ contract Hariba {
         uint256[] memory createdAts
     ) {
         uint256 len = _reminderIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new bytes32[](0), new bool[](0), new uint256[](0));
+        uint256 take = limit > HRB_BATCH_LARGE ? HRB_BATCH_LARGE : limit;
+        if (offset + take > len) take = len - offset;
+        reminderIds = new bytes32[](take);
+        owners = new address[](take);
+        triggerAts = new uint256[](take);
+        linkedTaskIds = new bytes32[](take);
+        fireds = new bool[](take);
+        createdAts = new uint256[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _reminderIds[offset + i];
+            Reminder storage r = _reminders[id];
+            reminderIds[i] = id;
+            owners[i] = r.owner;
+            triggerAts[i] = r.triggerAt;
+            linkedTaskIds[i] = r.linkedTaskId;
+            fireds[i] = r.fired;
+            createdAts[i] = r.createdAt;
+        }
+    }
+
+    function getSessionSummariesBatchLarge(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory sessionIds,
+        address[] memory owners,
+        uint256[] memory startedAts,
+        uint256[] memory closedAts,
+        uint256[] memory responseCounts
+    ) {
+        uint256 len = _sessionIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new uint256[](0), new uint256[](0));
+        uint256 take = limit > HRB_BATCH_LARGE ? HRB_BATCH_LARGE : limit;
+        if (offset + take > len) take = len - offset;
+        sessionIds = new bytes32[](take);
+        owners = new address[](take);
+        startedAts = new uint256[](take);
+        closedAts = new uint256[](take);
+        responseCounts = new uint256[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _sessionIds[offset + i];
+            Session storage s = _sessions[id];
+            sessionIds[i] = id;
+            owners[i] = s.owner;
+            startedAts[i] = s.startedAt;
+            closedAts[i] = s.closedAt;
+            responseCounts[i] = s.responseCount;
+        }
+    }
+
+    function getIntentSummariesBatch(uint256 offset, uint256 limit) external view returns (
+        bytes32[] memory intentIds,
+        address[] memory owners,
+        uint8[] memory intentTypes,
+        uint256[] memory createdAts
+    ) {
+        uint256 len = _intentIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint8[](0), new uint256[](0));
+        uint256 take = limit;
+        if (offset + take > len) take = len - offset;
+        if (take > HRB_VIEW_BATCH) take = HRB_VIEW_BATCH;
+        intentIds = new bytes32[](take);
+        owners = new address[](take);
+        intentTypes = new uint8[](take);
+        createdAts = new uint256[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _intentIds[offset + i];
+            Intent storage in_ = _intents[id];
+            intentIds[i] = id;
+            owners[i] = in_.owner;
+            intentTypes[i] = in_.intentType;
