@@ -1309,3 +1309,72 @@ contract Hariba {
             intentIds[i] = id;
             owners[i] = in_.owner;
             intentTypes[i] = in_.intentType;
+            createdAts[i] = in_.createdAt;
+        }
+    }
+
+    function getTaskDueAt(bytes32 taskId) external view returns (uint256) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t.dueAt;
+    }
+
+    function getTaskKind(bytes32 taskId) external view returns (uint8) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t.kind;
+    }
+
+    function getTaskCreatedAt(bytes32 taskId) external view returns (uint256) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t.createdAt;
+    }
+
+    function getReminderTriggerAt(bytes32 reminderId) external view returns (uint256) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r.triggerAt;
+    }
+
+    function getReminderLinkedTask(bytes32 reminderId) external view returns (bytes32) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r.linkedTaskId;
+    }
+
+    function getReminderCreatedAt(bytes32 reminderId) external view returns (uint256) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r.createdAt;
+    }
+
+    function getSessionStartedAt(bytes32 sessionId) external view returns (uint256) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s.startedAt;
+    }
+
+    function getSessionClosedAt(bytes32 sessionId) external view returns (uint256) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s.closedAt;
+    }
+
+    function getIntentType(bytes32 intentId) external view returns (uint8) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) revert HRB_InvalidRefId();
+        return i.intentType;
+    }
+
+    function getIntentCreatedAt(bytes32 intentId) external view returns (uint256) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) revert HRB_InvalidRefId();
+        return i.createdAt;
+    }
+
+    function isTaskPending(bytes32 taskId) external view returns (bool) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) return false;
+        return t.status == TASK_STATUS_PENDING;
+    }
