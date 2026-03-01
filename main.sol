@@ -1447,3 +1447,72 @@ contract Hariba {
             HRB_MAX_RESPONSES_PER_SESSION,
             HRB_VIEW_BATCH,
             HRB_RATING_MIN,
+            HRB_RATING_MAX,
+            HRB_INTENT_TYPES,
+            HRB_TASK_KINDS
+        );
+    }
+
+    function getRoleAddresses() external view returns (
+        address stewardAddr,
+        address vaultAddr,
+        address oracleAddr,
+        address relayAddr,
+        address keeperAddr,
+        address curatorAddr,
+        address sentinelAddr
+    ) {
+        return (steward, vault, oracle, relay, keeper, curator, sentinel);
+    }
+
+    function getConfig() external view returns (
+        uint256 maxTasksPerUser_,
+        uint256 maxRemindersPerUser_,
+        uint256 feeWei_,
+        bool paused_
+    ) {
+        return (maxTasksPerUser, maxRemindersPerUser, feeWei, _paused);
+    }
+
+    function computeTaskId(address owner, uint256 nonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.chainid, address(this), owner, nonce, "task"));
+    }
+
+    function computeReminderId(address owner, uint256 nonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.chainid, address(this), owner, nonce, "reminder"));
+    }
+
+    function computeSessionId(address owner, uint256 nonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.chainid, address(this), owner, nonce, "session"));
+    }
+
+    function computeIntentId(address owner, uint256 nonce) external view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.chainid, address(this), owner, nonce, "intent"));
+    }
+
+    function prefKeyHash(string calldata key) external pure returns (bytes32) {
+        return keccak256(bytes(key));
+    }
+
+    function slotKeyHash(string calldata key) external pure returns (bytes32) {
+        return keccak256(bytes(key));
+    }
+
+    function scheduleIdHash(string calldata label) external pure returns (bytes32) {
+        return keccak256(bytes(label));
+    }
+
+    struct TaskSummaryView {
+        bytes32 taskId;
+        address owner;
+        uint8 kind;
+        uint256 dueAt;
+        uint8 status;
+        uint256 createdAt;
+    }
+
+    struct ReminderSummaryView {
+        bytes32 reminderId;
+        address owner;
+        uint256 triggerAt;
+        bytes32 linkedTaskId;
