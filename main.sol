@@ -826,3 +826,72 @@ contract Hariba {
         if (s.owner == address(0)) revert HRB_SessionNotFound();
         return s.closedAt != 0;
     }
+
+    function getDomainLabel() external pure returns (bytes32) {
+        return HRB_DOMAIN_LABEL;
+    }
+
+    function getMaxTasksPerUser() external view returns (uint256) {
+        return maxTasksPerUser;
+    }
+
+    function getMaxRemindersPerUser() external view returns (uint256) {
+        return maxRemindersPerUser;
+    }
+
+    function getFeeWei() external view returns (uint256) {
+        return feeWei;
+    }
+
+    function getDeployBlock() external view returns (uint256) {
+        return deployBlock;
+    }
+
+    function getVaultBalance() external view returns (uint256) {
+        return balanceOf[vault];
+    }
+
+    function getStewardAddress() external view returns (address) {
+        return steward;
+    }
+
+    function getVaultAddress() external view returns (address) {
+        return vault;
+    }
+
+    function getOracleAddress() external view returns (address) {
+        return oracle;
+    }
+
+    function getRelayAddress() external view returns (address) {
+        return relay;
+    }
+
+    function getKeeperAddress() external view returns (address) {
+        return keeper;
+    }
+
+    function getCuratorAddress() external view returns (address) {
+        return curator;
+    }
+
+    function getSentinelAddress() external view returns (address) {
+        return sentinel;
+    }
+
+    function getResponseCount(bytes32 sessionId) external view returns (uint256) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s.responseCount;
+    }
+
+    function getTaskOwner(bytes32 taskId) external view returns (address) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t.owner;
+    }
+
+    function getReminderOwner(bytes32 reminderId) external view returns (address) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r.owner;
