@@ -343,3 +343,72 @@ contract Hariba {
         sessionId = _nextSessionId();
         _sessions[sessionId] = Session({
             sessionId: sessionId,
+            owner: msg.sender,
+            startedAt: block.timestamp,
+            closedAt: 0,
+            responseCount: 0
+        });
+        _sessionIds.push(sessionId);
+        _sessionCountByOwner[msg.sender]++;
+        totalSessions++;
+        emit SessionCreated(sessionId, msg.sender, block.timestamp, block.number);
+        return sessionId;
+    }
+
+    function closeSession(bytes32 sessionId) external nonReentrant {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (s.closedAt != 0) revert HRB_SessionAlreadyClosed();
+        if (msg.sender != s.owner && msg.sender != keeper) revert HRB_Unauthorized();
+        s.closedAt = block.timestamp;
+        emit SessionClosed(sessionId, s.owner, block.timestamp, block.number);
+    }
+
+    function logResponse(bytes32 sessionId, bytes32 responseHash) external whenNotPaused onlyOracle {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (s.closedAt != 0) revert HRB_SessionAlreadyClosed();
+        if (s.responseCount >= HRB_MAX_RESPONSES_PER_SESSION) revert HRB_ResponseIndexOutOfBounds();
+        _responseHashes[sessionId][s.responseCount] = responseHash;
+        s.responseCount++;
+        emit ResponseLogged(sessionId, s.responseCount - 1, block.number);
+    }
+
+    function recordSlot(bytes32 sessionId, bytes32 slotKey, bytes calldata value) external whenNotPaused onlyCurator {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        _slotData[sessionId][slotKey] = value;
+        emit SlotRecorded(sessionId, slotKey, value, block.number);
+    }
+
+    function updateContextWindow(bytes32 sessionId, uint256 fromIndex, uint256 toIndex) external whenNotPaused onlyKeeper {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (fromIndex >= HRB_MAX_RESPONSES_PER_SESSION || toIndex >= HRB_MAX_RESPONSES_PER_SESSION) revert HRB_IndexOutOfRange();
+        emit ContextWindowUpdated(sessionId, fromIndex, toIndex, block.number);
+    }
+
+    function setScheduleAnchor(bytes32 scheduleId, uint256 anchorTime) external whenNotPaused {
+        if (anchorTime == 0) revert HRB_InvalidScheduleAnchor();
+        _scheduleAnchors[scheduleId] = anchorTime;
+        emit ScheduleAnchorSet(scheduleId, msg.sender, anchorTime, block.number);
+    }
+
+    function _nextIntentId() internal view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.number, block.timestamp, totalIntents, msg.sender, "intent"));
+    }
+
+    function registerIntent(uint8 intentType) external whenNotPaused returns (bytes32 intentId) {
+        if (intentType >= HRB_INTENT_TYPES) revert HRB_InvalidIntentType();
+        intentId = _nextIntentId();
+        _intents[intentId] = Intent({
+            intentId: intentId,
+            owner: msg.sender,
+            intentType: intentType,
+            createdAt: block.timestamp
+        });
+        _intentIds.push(intentId);
+        totalIntents++;
+        emit IntentRegistered(intentId, msg.sender, intentType, block.number);
+        return intentId;
+    }
