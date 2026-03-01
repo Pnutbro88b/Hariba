@@ -412,3 +412,72 @@ contract Hariba {
         emit IntentRegistered(intentId, msg.sender, intentType, block.number);
         return intentId;
     }
+
+    function submitFeedback(bytes32 refId, uint8 rating) external whenNotPaused {
+        if (refId == bytes32(0)) revert HRB_InvalidRefId();
+        if (rating < HRB_RATING_MIN || rating > HRB_RATING_MAX) revert HRB_RatingOutOfRange();
+        emit FeedbackSubmitted(refId, msg.sender, rating, block.number);
+    }
+
+    function deposit() external payable whenNotPaused nonReentrant {
+        if (msg.value == 0) revert HRB_ZeroAmount();
+        balanceOf[msg.sender] += msg.value;
+        emit DepositReceived(msg.sender, msg.value, block.number);
+    }
+
+    function withdraw(uint256 amountWei) external nonReentrant {
+        if (amountWei == 0) revert HRB_ZeroAmount();
+        if (balanceOf[msg.sender] < amountWei) revert HRB_InsufficientDeposit();
+        balanceOf[msg.sender] -= amountWei;
+        (bool ok,) = msg.sender.call{value: amountWei}("");
+        if (!ok) revert HRB_TransferFailed();
+        emit WithdrawalProcessed(msg.sender, amountWei, msg.sender, block.number);
+    }
+
+    function processWithdrawal(address to, uint256 amountWei) external onlyVault nonReentrant {
+        if (to == address(0)) revert HRB_ZeroAddress();
+        if (amountWei == 0) revert HRB_ZeroAmount();
+        if (balanceOf[vault] < amountWei) revert HRB_InsufficientDeposit();
+        balanceOf[vault] -= amountWei;
+        (bool ok,) = to.call{value: amountWei}("");
+        if (!ok) revert HRB_TransferFailed();
+        emit WithdrawalProcessed(to, amountWei, msg.sender, block.number);
+    }
+
+    function getTask(bytes32 taskId) external view returns (
+        address owner,
+        uint8 kind,
+        uint256 dueAt,
+        uint8 status,
+        uint256 createdAt
+    ) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return (t.owner, t.kind, t.dueAt, t.status, t.createdAt);
+    }
+
+    function getReminder(bytes32 reminderId) external view returns (
+        address owner,
+        uint256 triggerAt,
+        bytes32 linkedTaskId,
+        bool fired,
+        uint256 createdAt
+    ) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return (r.owner, r.triggerAt, r.linkedTaskId, r.fired, r.createdAt);
+    }
+
+    function getSession(bytes32 sessionId) external view returns (
+        address owner,
+        uint256 startedAt,
+        uint256 closedAt,
+        uint256 responseCount
+    ) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return (s.owner, s.startedAt, s.closedAt, s.responseCount);
+    }
+
+    function getIntent(bytes32 intentId) external view returns (
+        address owner,
