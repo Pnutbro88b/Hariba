@@ -757,3 +757,72 @@ contract Hariba {
         bool[] memory fireds
     ) {
         uint256 len = _reminderIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new bool[](0));
+        uint256 take = 8;
+        if (offset + take > len) take = len - offset;
+        reminderIds = new bytes32[](take);
+        owners = new address[](take);
+        fireds = new bool[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _reminderIds[offset + i];
+            Reminder storage r = _reminders[id];
+            reminderIds[i] = id;
+            owners[i] = r.owner;
+            fireds[i] = r.fired;
+        }
+    }
+
+    function getSessionSummariesBatchSmall(uint256 offset) external view returns (
+        bytes32[] memory sessionIds,
+        address[] memory owners,
+        uint256[] memory responseCounts
+    ) {
+        uint256 len = _sessionIds.length;
+        if (offset >= len) return (new bytes32[](0), new address[](0), new uint256[](0));
+        uint256 take = 8;
+        if (offset + take > len) take = len - offset;
+        sessionIds = new bytes32[](take);
+        owners = new address[](take);
+        responseCounts = new uint256[](take);
+        for (uint256 i = 0; i < take; i++) {
+            bytes32 id = _sessionIds[offset + i];
+            Session storage s = _sessions[id];
+            sessionIds[i] = id;
+            owners[i] = s.owner;
+            responseCounts[i] = s.responseCount;
+        }
+    }
+
+    function hasTask(bytes32 taskId) external view returns (bool) {
+        return _tasks[taskId].owner != address(0);
+    }
+
+    function hasReminder(bytes32 reminderId) external view returns (bool) {
+        return _reminders[reminderId].owner != address(0);
+    }
+
+    function hasSession(bytes32 sessionId) external view returns (bool) {
+        return _sessions[sessionId].owner != address(0);
+    }
+
+    function hasIntent(bytes32 intentId) external view returns (bool) {
+        return _intents[intentId].owner != address(0);
+    }
+
+    function taskStatus(bytes32 taskId) external view returns (uint8) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t.status;
+    }
+
+    function reminderFired(bytes32 reminderId) external view returns (bool) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r.fired;
+    }
+
+    function sessionClosed(bytes32 sessionId) external view returns (bool) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s.closedAt != 0;
+    }
