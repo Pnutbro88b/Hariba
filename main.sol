@@ -964,3 +964,72 @@ contract Hariba {
     function getSessionIdsSlice(uint256 fromInclusive, uint256 toExclusive) external view returns (bytes32[] memory out) {
         if (toExclusive > _sessionIds.length) revert HRB_IndexOutOfRange();
         if (fromInclusive >= toExclusive) return new bytes32[](0);
+        uint256 n = toExclusive - fromInclusive;
+        if (n > HRB_VIEW_BATCH) revert HRB_IndexOutOfRange();
+        out = new bytes32[](n);
+        for (uint256 i = 0; i < n; i++) out[i] = _sessionIds[fromInclusive + i];
+    }
+
+    function getIntentIdsSlice(uint256 fromInclusive, uint256 toExclusive) external view returns (bytes32[] memory out) {
+        if (toExclusive > _intentIds.length) revert HRB_IndexOutOfRange();
+        if (fromInclusive >= toExclusive) return new bytes32[](0);
+        uint256 n = toExclusive - fromInclusive;
+        if (n > HRB_VIEW_BATCH) revert HRB_IndexOutOfRange();
+        out = new bytes32[](n);
+        for (uint256 i = 0; i < n; i++) out[i] = _intentIds[fromInclusive + i];
+    }
+
+    function getFullTask(bytes32 taskId) external view returns (Task memory) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        return t;
+    }
+
+    function getFullReminder(bytes32 reminderId) external view returns (Reminder memory) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        return r;
+    }
+
+    function getFullSession(bytes32 sessionId) external view returns (Session memory) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s;
+    }
+
+    function getFullIntent(bytes32 intentId) external view returns (Intent memory) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) revert HRB_InvalidRefId();
+        return i;
+    }
+
+    function getTaskSummariesBatchFrom(uint256 fromIndex, uint256 count) external view returns (
+        bytes32[] memory taskIds,
+        address[] memory owners,
+        uint8[] memory kinds,
+        uint256[] memory dueAts,
+        uint8[] memory statuses,
+        uint256[] memory createdAts
+    ) {
+        uint256 len = _taskIds.length;
+        if (fromIndex >= len) return (new bytes32[](0), new address[](0), new uint8[](0), new uint256[](0), new uint8[](0), new uint256[](0));
+        if (count > HRB_VIEW_BATCH) count = HRB_VIEW_BATCH;
+        if (fromIndex + count > len) count = len - fromIndex;
+        taskIds = new bytes32[](count);
+        owners = new address[](count);
+        kinds = new uint8[](count);
+        dueAts = new uint256[](count);
+        statuses = new uint8[](count);
+        createdAts = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            bytes32 id = _taskIds[fromIndex + i];
+            Task storage t = _tasks[id];
+            taskIds[i] = id;
+            owners[i] = t.owner;
+            kinds[i] = t.kind;
+            dueAts[i] = t.dueAt;
+            statuses[i] = t.status;
+            createdAts[i] = t.createdAt;
+        }
+    }
+
