@@ -274,3 +274,72 @@ contract Hariba {
         _taskCountByOwner[msg.sender]++;
         totalTasks++;
         balanceOf[vault] += msg.value;
+        emit TaskEnqueued(taskId, msg.sender, kind, dueAt, block.number);
+        return taskId;
+    }
+
+    function completeTask(bytes32 taskId) external whenNotPaused nonReentrant {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        if (t.status == TASK_STATUS_COMPLETED) revert HRB_TaskAlreadyCompleted();
+        if (t.status == TASK_STATUS_CANCELLED) revert HRB_TaskAlreadyCancelled();
+        if (msg.sender != t.owner && msg.sender != keeper && msg.sender != steward) revert HRB_Unauthorized();
+        t.status = TASK_STATUS_COMPLETED;
+        emit TaskCompleted(taskId, msg.sender, block.number);
+    }
+
+    function cancelTask(bytes32 taskId) external nonReentrant {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        if (t.status != TASK_STATUS_PENDING) revert HRB_TaskAlreadyCompleted();
+        if (msg.sender != t.owner && msg.sender != steward) revert HRB_Unauthorized();
+        t.status = TASK_STATUS_CANCELLED;
+        emit TaskCancelled(taskId, msg.sender, block.number);
+    }
+
+    function _nextReminderId() internal view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.number, block.timestamp, totalReminders, msg.sender, "reminder"));
+    }
+
+    function setReminder(uint256 triggerAt, bytes32 linkedTaskId) external whenNotPaused nonReentrant returns (bytes32 reminderId) {
+        if (totalReminders >= HRB_MAX_REMINDERS_GLOBAL) revert HRB_ExceedsMaxRemindersPerUser();
+        if (_reminderCountByOwner[msg.sender] >= maxRemindersPerUser) revert HRB_ExceedsMaxRemindersPerUser();
+        reminderId = _nextReminderId();
+        _reminders[reminderId] = Reminder({
+            reminderId: reminderId,
+            owner: msg.sender,
+            triggerAt: triggerAt,
+            linkedTaskId: linkedTaskId,
+            fired: false,
+            createdAt: block.timestamp
+        });
+        _reminderIds.push(reminderId);
+        _reminderCountByOwner[msg.sender]++;
+        totalReminders++;
+        emit ReminderSet(reminderId, msg.sender, triggerAt, linkedTaskId, block.number);
+        return reminderId;
+    }
+
+    function fireReminder(bytes32 reminderId) external whenNotPaused onlyRelay {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        if (r.fired) revert HRB_ReminderAlreadyFired();
+        if (block.timestamp < r.triggerAt) revert HRB_DeadlinePassed();
+        r.fired = true;
+        emit ReminderFired(reminderId, r.owner, block.number);
+    }
+
+    function storePreference(bytes32 keyHash, bytes calldata value) external whenNotPaused {
+        _preferences[msg.sender][keyHash] = value;
+        emit PreferenceStored(msg.sender, keyHash, block.number);
+    }
+
+    function _nextSessionId() internal view returns (bytes32) {
+        return keccak256(abi.encodePacked(block.number, block.timestamp, totalSessions, msg.sender, "session"));
+    }
+
+    function createSession() external whenNotPaused nonReentrant returns (bytes32 sessionId) {
+        if (_sessionCountByOwner[msg.sender] >= HRB_MAX_SESSIONS_PER_OWNER) revert HRB_ExceedsMaxTasksPerUser();
+        sessionId = _nextSessionId();
+        _sessions[sessionId] = Session({
+            sessionId: sessionId,
