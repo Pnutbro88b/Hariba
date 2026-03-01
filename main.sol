@@ -895,3 +895,72 @@ contract Hariba {
         Reminder storage r = _reminders[reminderId];
         if (r.owner == address(0)) revert HRB_ReminderNotFound();
         return r.owner;
+    }
+
+    function getSessionOwner(bytes32 sessionId) external view returns (address) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        return s.owner;
+    }
+
+    function getIntentOwner(bytes32 intentId) external view returns (address) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) revert HRB_InvalidRefId();
+        return i.owner;
+    }
+
+    function batchFireReminders(bytes32[] calldata reminderIds) external whenNotPaused onlyRelay {
+        for (uint256 i = 0; i < reminderIds.length; i++) {
+            Reminder storage r = _reminders[reminderIds[i]];
+            if (r.owner == address(0)) continue;
+            if (r.fired) continue;
+            if (block.timestamp < r.triggerAt) continue;
+            r.fired = true;
+            emit ReminderFired(reminderIds[i], r.owner, block.number);
+        }
+    }
+
+    function batchCompleteTasks(bytes32[] calldata taskIds) external whenNotPaused {
+        for (uint256 i = 0; i < taskIds.length; i++) {
+            Task storage t = _tasks[taskIds[i]];
+            if (t.owner == address(0)) continue;
+            if (t.status != TASK_STATUS_PENDING) continue;
+            if (msg.sender != t.owner && msg.sender != keeper && msg.sender != steward) continue;
+            t.status = TASK_STATUS_COMPLETED;
+            emit TaskCompleted(taskIds[i], msg.sender, block.number);
+        }
+    }
+
+    function batchLogResponses(bytes32 sessionId, bytes32[] calldata responseHashes) external whenNotPaused onlyOracle {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        if (s.closedAt != 0) revert HRB_SessionAlreadyClosed();
+        for (uint256 i = 0; i < responseHashes.length; i++) {
+            if (s.responseCount >= HRB_MAX_RESPONSES_PER_SESSION) break;
+            _responseHashes[sessionId][s.responseCount] = responseHashes[i];
+            s.responseCount++;
+            emit ResponseLogged(sessionId, s.responseCount - 1, block.number);
+        }
+    }
+
+    function getTaskIdsSlice(uint256 fromInclusive, uint256 toExclusive) external view returns (bytes32[] memory out) {
+        if (toExclusive > _taskIds.length) revert HRB_IndexOutOfRange();
+        if (fromInclusive >= toExclusive) return new bytes32[](0);
+        uint256 n = toExclusive - fromInclusive;
+        if (n > HRB_VIEW_BATCH) revert HRB_IndexOutOfRange();
+        out = new bytes32[](n);
+        for (uint256 i = 0; i < n; i++) out[i] = _taskIds[fromInclusive + i];
+    }
+
+    function getReminderIdsSlice(uint256 fromInclusive, uint256 toExclusive) external view returns (bytes32[] memory out) {
+        if (toExclusive > _reminderIds.length) revert HRB_IndexOutOfRange();
+        if (fromInclusive >= toExclusive) return new bytes32[](0);
+        uint256 n = toExclusive - fromInclusive;
+        if (n > HRB_VIEW_BATCH) revert HRB_IndexOutOfRange();
+        out = new bytes32[](n);
+        for (uint256 i = 0; i < n; i++) out[i] = _reminderIds[fromInclusive + i];
+    }
+
+    function getSessionIdsSlice(uint256 fromInclusive, uint256 toExclusive) external view returns (bytes32[] memory out) {
+        if (toExclusive > _sessionIds.length) revert HRB_IndexOutOfRange();
+        if (fromInclusive >= toExclusive) return new bytes32[](0);
