@@ -1033,3 +1033,72 @@ contract Hariba {
         }
     }
 
+    function getReminderSummariesBatchFrom(uint256 fromIndex, uint256 count) external view returns (
+        bytes32[] memory reminderIds,
+        address[] memory owners,
+        uint256[] memory triggerAts,
+        bytes32[] memory linkedTaskIds,
+        bool[] memory fireds,
+        uint256[] memory createdAts
+    ) {
+        uint256 len = _reminderIds.length;
+        if (fromIndex >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new bytes32[](0), new bool[](0), new uint256[](0));
+        if (count > HRB_VIEW_BATCH) count = HRB_VIEW_BATCH;
+        if (fromIndex + count > len) count = len - fromIndex;
+        reminderIds = new bytes32[](count);
+        owners = new address[](count);
+        triggerAts = new uint256[](count);
+        linkedTaskIds = new bytes32[](count);
+        fireds = new bool[](count);
+        createdAts = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            bytes32 id = _reminderIds[fromIndex + i];
+            Reminder storage r = _reminders[id];
+            reminderIds[i] = id;
+            owners[i] = r.owner;
+            triggerAts[i] = r.triggerAt;
+            linkedTaskIds[i] = r.linkedTaskId;
+            fireds[i] = r.fired;
+            createdAts[i] = r.createdAt;
+        }
+    }
+
+    function getSessionSummariesBatchFrom(uint256 fromIndex, uint256 count) external view returns (
+        bytes32[] memory sessionIds,
+        address[] memory owners,
+        uint256[] memory startedAts,
+        uint256[] memory closedAts,
+        uint256[] memory responseCounts
+    ) {
+        uint256 len = _sessionIds.length;
+        if (fromIndex >= len) return (new bytes32[](0), new address[](0), new uint256[](0), new uint256[](0), new uint256[](0));
+        if (count > HRB_VIEW_BATCH) count = HRB_VIEW_BATCH;
+        if (fromIndex + count > len) count = len - fromIndex;
+        sessionIds = new bytes32[](count);
+        owners = new address[](count);
+        startedAts = new uint256[](count);
+        closedAts = new uint256[](count);
+        responseCounts = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            bytes32 id = _sessionIds[fromIndex + i];
+            Session storage s = _sessions[id];
+            sessionIds[i] = id;
+            owners[i] = s.owner;
+            startedAts[i] = s.startedAt;
+            closedAts[i] = s.closedAt;
+            responseCounts[i] = s.responseCount;
+        }
+    }
+
+    function getIntentSummariesBatchFrom(uint256 fromIndex, uint256 count) external view returns (
+        bytes32[] memory intentIds,
+        address[] memory owners,
+        uint8[] memory intentTypes,
+        uint256[] memory createdAts
+    ) {
+        uint256 len = _intentIds.length;
+        if (fromIndex >= len) return (new bytes32[](0), new address[](0), new uint8[](0), new uint256[](0));
+        if (count > HRB_VIEW_BATCH) count = HRB_VIEW_BATCH;
+        if (fromIndex + count > len) count = len - fromIndex;
+        intentIds = new bytes32[](count);
+        owners = new address[](count);
