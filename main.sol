@@ -1654,3 +1654,72 @@ contract Hariba {
         for (uint256 i = 0; i < len && count < cap; i++) {
             bytes32 id = _taskIds[i];
             if (_tasks[id].status == statusFilter) {
+                taskIds[count] = id;
+                owners[count] = _tasks[id].owner;
+                count++;
+            }
+        }
+    }
+
+    function getRemindersByFired(bool firedFilter) external view returns (
+        bytes32[] memory reminderIds,
+        address[] memory owners,
+        uint256 count
+    ) {
+        uint256 len = _reminderIds.length;
+        uint256 cap = 0;
+        for (uint256 i = 0; i < len; i++) {
+            if (_reminders[_reminderIds[i]].fired == firedFilter) cap++;
+        }
+        if (cap > HRB_VIEW_BATCH) cap = HRB_VIEW_BATCH;
+        reminderIds = new bytes32[](cap);
+        owners = new address[](cap);
+        count = 0;
+        for (uint256 i = 0; i < len && count < cap; i++) {
+            bytes32 id = _reminderIds[i];
+            if (_reminders[id].fired == firedFilter) {
+                reminderIds[count] = id;
+                owners[count] = _reminders[id].owner;
+                count++;
+            }
+        }
+    }
+
+    function getSessionsByOpen(bool openFilter) external view returns (
+        bytes32[] memory sessionIds,
+        address[] memory owners,
+        uint256 count
+    ) {
+        uint256 len = _sessionIds.length;
+        uint256 cap = 0;
+        for (uint256 i = 0; i < len; i++) {
+            Session storage s = _sessions[_sessionIds[i]];
+            if ((s.closedAt == 0) == openFilter) cap++;
+        }
+        if (cap > HRB_VIEW_BATCH) cap = HRB_VIEW_BATCH;
+        sessionIds = new bytes32[](cap);
+        owners = new address[](cap);
+        count = 0;
+        for (uint256 i = 0; i < len && count < cap; i++) {
+            bytes32 id = _sessionIds[i];
+            Session storage s = _sessions[id];
+            if ((s.closedAt == 0) == openFilter) {
+                sessionIds[count] = id;
+                owners[count] = s.owner;
+                count++;
+            }
+        }
+    }
+
+    function validateTaskId(bytes32 taskId) external view returns (bool valid, address owner, uint8 status) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) return (false, address(0), 0);
+        return (true, t.owner, t.status);
+    }
+
+    function validateReminderId(bytes32 reminderId) external view returns (bool valid, address owner, bool fired) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) return (false, address(0), false);
+        return (true, r.owner, r.fired);
+    }
+
