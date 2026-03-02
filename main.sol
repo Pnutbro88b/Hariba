@@ -1585,3 +1585,72 @@ contract Hariba {
             });
         }
     }
+
+    function getReminderSummariesPaginated(uint256 page, uint256 pageSize) external view returns (
+        ReminderSummaryView[] memory items,
+        uint256 totalLength
+    ) {
+        totalLength = _reminderIds.length;
+        if (pageSize > HRB_VIEW_BATCH) pageSize = HRB_VIEW_BATCH;
+        uint256 start = page * pageSize;
+        if (start >= totalLength) return (new ReminderSummaryView[](0), totalLength);
+        uint256 end = start + pageSize;
+        if (end > totalLength) end = totalLength;
+        uint256 n = end - start;
+        items = new ReminderSummaryView[](n);
+        for (uint256 i = 0; i < n; i++) {
+            bytes32 id = _reminderIds[start + i];
+            Reminder storage r = _reminders[id];
+            items[i] = ReminderSummaryView({
+                reminderId: r.reminderId,
+                owner: r.owner,
+                triggerAt: r.triggerAt,
+                linkedTaskId: r.linkedTaskId,
+                fired: r.fired,
+                createdAt: r.createdAt
+            });
+        }
+    }
+
+    function getSessionSummariesPaginated(uint256 page, uint256 pageSize) external view returns (
+        SessionSummaryView[] memory items,
+        uint256 totalLength
+    ) {
+        totalLength = _sessionIds.length;
+        if (pageSize > HRB_VIEW_BATCH) pageSize = HRB_VIEW_BATCH;
+        uint256 start = page * pageSize;
+        if (start >= totalLength) return (new SessionSummaryView[](0), totalLength);
+        uint256 end = start + pageSize;
+        if (end > totalLength) end = totalLength;
+        uint256 n = end - start;
+        items = new SessionSummaryView[](n);
+        for (uint256 i = 0; i < n; i++) {
+            bytes32 id = _sessionIds[start + i];
+            Session storage s = _sessions[id];
+            items[i] = SessionSummaryView({
+                sessionId: s.sessionId,
+                owner: s.owner,
+                startedAt: s.startedAt,
+                closedAt: s.closedAt,
+                responseCount: s.responseCount
+            });
+        }
+    }
+
+    function getTasksByStatus(uint8 statusFilter) external view returns (
+        bytes32[] memory taskIds,
+        address[] memory owners,
+        uint256 count
+    ) {
+        uint256 len = _taskIds.length;
+        uint256 cap = 0;
+        for (uint256 i = 0; i < len; i++) {
+            if (_tasks[_taskIds[i]].status == statusFilter) cap++;
+        }
+        if (cap > HRB_VIEW_BATCH) cap = HRB_VIEW_BATCH;
+        taskIds = new bytes32[](cap);
+        owners = new address[](cap);
+        count = 0;
+        for (uint256 i = 0; i < len && count < cap; i++) {
+            bytes32 id = _taskIds[i];
+            if (_tasks[id].status == statusFilter) {
