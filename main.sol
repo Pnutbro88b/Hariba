@@ -1792,3 +1792,66 @@ contract Hariba {
 
     function getChainId() external view returns (uint256) {
         return block.chainid;
+    }
+
+    function getBlockNumber() external view returns (uint256) {
+        return block.number;
+    }
+
+    function getBlockTimestamp() external view returns (uint256) {
+        return block.timestamp;
+    }
+
+    function getContractAddress() external view returns (address) {
+        return address(this);
+    }
+
+    function getVaultTotalBalance() external view returns (uint256) {
+        return balanceOf[vault];
+    }
+
+    function getFeeWeiForTask() external view returns (uint256) {
+        return feeWei;
+    }
+
+    function getMaxTasksGlobal() external pure returns (uint256) {
+        return HRB_MAX_TASKS_GLOBAL;
+    }
+
+    function getMaxRemindersGlobal() external pure returns (uint256) {
+        return HRB_MAX_REMINDERS_GLOBAL;
+    }
+
+    function getMaxResponsesPerSession() external pure returns (uint256) {
+        return HRB_MAX_RESPONSES_PER_SESSION;
+    }
+
+    function getViewBatchSize() external pure returns (uint256) {
+        return HRB_VIEW_BATCH;
+    }
+
+    function getBatchMediumSize() external pure returns (uint256) {
+        return HRB_BATCH_MEDIUM;
+    }
+
+    function getBatchLargeSize() external pure returns (uint256) {
+        return HRB_BATCH_LARGE;
+    }
+
+    function getDefaultDueOffset() external pure returns (uint256) {
+        return HRB_DEFAULT_DUE_OFFSET;
+    }
+
+    function getMinTriggerOffset() external pure returns (uint256) {
+        return HRB_MIN_TRIGGER_OFFSET;
+    }
+
+    function getRatingBounds() external pure returns (uint256 minRating, uint256 maxRating) {
+        return (HRB_RATING_MIN, HRB_RATING_MAX);
+    }
+
+    receive() external payable {
+        balanceOf[vault] += msg.value;
+        emit DepositReceived(msg.sender, msg.value, block.number);
+    }
+}
