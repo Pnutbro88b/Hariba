@@ -1516,3 +1516,72 @@ contract Hariba {
         address owner;
         uint256 triggerAt;
         bytes32 linkedTaskId;
+        bool fired;
+        uint256 createdAt;
+    }
+
+    struct SessionSummaryView {
+        bytes32 sessionId;
+        address owner;
+        uint256 startedAt;
+        uint256 closedAt;
+        uint256 responseCount;
+    }
+
+    function getTaskSummaryStruct(bytes32 taskId) external view returns (TaskSummaryView memory v) {
+        Task storage t = _tasks[taskId];
+        if (t.owner == address(0)) revert HRB_TaskNotFound();
+        v.taskId = t.taskId;
+        v.owner = t.owner;
+        v.kind = t.kind;
+        v.dueAt = t.dueAt;
+        v.status = t.status;
+        v.createdAt = t.createdAt;
+    }
+
+    function getReminderSummaryStruct(bytes32 reminderId) external view returns (ReminderSummaryView memory v) {
+        Reminder storage r = _reminders[reminderId];
+        if (r.owner == address(0)) revert HRB_ReminderNotFound();
+        v.reminderId = r.reminderId;
+        v.owner = r.owner;
+        v.triggerAt = r.triggerAt;
+        v.linkedTaskId = r.linkedTaskId;
+        v.fired = r.fired;
+        v.createdAt = r.createdAt;
+    }
+
+    function getSessionSummaryStruct(bytes32 sessionId) external view returns (SessionSummaryView memory v) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) revert HRB_SessionNotFound();
+        v.sessionId = s.sessionId;
+        v.owner = s.owner;
+        v.startedAt = s.startedAt;
+        v.closedAt = s.closedAt;
+        v.responseCount = s.responseCount;
+    }
+
+    function getTaskSummariesPaginated(uint256 page, uint256 pageSize) external view returns (
+        TaskSummaryView[] memory items,
+        uint256 totalLength
+    ) {
+        totalLength = _taskIds.length;
+        if (pageSize > HRB_VIEW_BATCH) pageSize = HRB_VIEW_BATCH;
+        uint256 start = page * pageSize;
+        if (start >= totalLength) return (new TaskSummaryView[](0), totalLength);
+        uint256 end = start + pageSize;
+        if (end > totalLength) end = totalLength;
+        uint256 n = end - start;
+        items = new TaskSummaryView[](n);
+        for (uint256 i = 0; i < n; i++) {
+            bytes32 id = _taskIds[start + i];
+            Task storage t = _tasks[id];
+            items[i] = TaskSummaryView({
+                taskId: t.taskId,
+                owner: t.owner,
+                kind: t.kind,
+                dueAt: t.dueAt,
+                status: t.status,
+                createdAt: t.createdAt
+            });
+        }
+    }
