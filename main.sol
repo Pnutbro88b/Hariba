@@ -1723,3 +1723,72 @@ contract Hariba {
         return (true, r.owner, r.fired);
     }
 
+    function validateSessionId(bytes32 sessionId) external view returns (bool valid, address owner, bool closed) {
+        Session storage s = _sessions[sessionId];
+        if (s.owner == address(0)) return (false, address(0), false);
+        return (true, s.owner, s.closedAt != 0);
+    }
+
+    function validateIntentId(bytes32 intentId) external view returns (bool valid, address owner, uint8 intentType) {
+        Intent storage i = _intents[intentId];
+        if (i.owner == address(0)) return (false, address(0), 0);
+        return (true, i.owner, i.intentType);
+    }
+
+    function getLastTaskId() external view returns (bytes32) {
+        if (_taskIds.length == 0) return bytes32(0);
+        return _taskIds[_taskIds.length - 1];
+    }
+
+    function getLastReminderId() external view returns (bytes32) {
+        if (_reminderIds.length == 0) return bytes32(0);
+        return _reminderIds[_reminderIds.length - 1];
+    }
+
+    function getLastSessionId() external view returns (bytes32) {
+        if (_sessionIds.length == 0) return bytes32(0);
+        return _sessionIds[_sessionIds.length - 1];
+    }
+
+    function getLastIntentId() external view returns (bytes32) {
+        if (_intentIds.length == 0) return bytes32(0);
+        return _intentIds[_intentIds.length - 1];
+    }
+
+    function getTaskIdAtReverse(uint256 indexFromEnd) external view returns (bytes32) {
+        if (_taskIds.length == 0 || indexFromEnd >= _taskIds.length) revert HRB_IndexOutOfRange();
+        return _taskIds[_taskIds.length - 1 - indexFromEnd];
+    }
+
+    function getReminderIdAtReverse(uint256 indexFromEnd) external view returns (bytes32) {
+        if (_reminderIds.length == 0 || indexFromEnd >= _reminderIds.length) revert HRB_IndexOutOfRange();
+        return _reminderIds[_reminderIds.length - 1 - indexFromEnd];
+    }
+
+    function getSessionIdAtReverse(uint256 indexFromEnd) external view returns (bytes32) {
+        if (_sessionIds.length == 0 || indexFromEnd >= _sessionIds.length) revert HRB_IndexOutOfRange();
+        return _sessionIds[_sessionIds.length - 1 - indexFromEnd];
+    }
+
+    function getIntentIdAtReverse(uint256 indexFromEnd) external view returns (bytes32) {
+        if (_intentIds.length == 0 || indexFromEnd >= _intentIds.length) revert HRB_IndexOutOfRange();
+        return _intentIds[_intentIds.length - 1 - indexFromEnd];
+    }
+
+    function getTaskKindLabel(uint8 kind) external pure returns (string memory) {
+        if (kind == TASK_KIND_GENERIC) return "generic";
+        if (kind == TASK_KIND_CALL) return "call";
+        if (kind == TASK_KIND_MEETING) return "meeting";
+        if (kind == TASK_KIND_DEADLINE) return "deadline";
+        return "unknown";
+    }
+
+    function getStatusLabel(uint8 status) external pure returns (string memory) {
+        if (status == TASK_STATUS_PENDING) return "pending";
+        if (status == TASK_STATUS_COMPLETED) return "completed";
+        if (status == TASK_STATUS_CANCELLED) return "cancelled";
+        return "unknown";
+    }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
